@@ -5,7 +5,7 @@ var express = require('express')
 var app = express();
 var upload = multer({ dest: '/tmp/' });
 
-var key = '';
+var key = ''; //TODO
 
 app.post('/', upload.single('thumb'), function (req, res, next) {
   var payload = JSON.parse(req.body.payload);
@@ -16,8 +16,8 @@ app.post('/', upload.single('thumb'), function (req, res, next) {
     json: true,
   };
 
-  //Ensure IFTTT's Maker channel is set to digest Plex.Play, Plex.Resume, .. events
-  //If you want to control lights in particular 'Plex Rooms' you can look into payload.Player.title to send a customer event based on the player (ensure you have a unique name for each player configured in Plex).
+  //Ensure IFTTT's Maker channel is set to digest Plex.Play, Plex.Resume, ... events
+  //If you want to control lights in particular 'Plex Rooms' you can look into payload.Player.title to send a custom event based on the player (ensure you have a unique name for each player configured in Plex).
   switch (payload.event) {
   case 'media.play':
     // Trigger IFTTT_Plex.Play
@@ -45,6 +45,10 @@ app.post('/', upload.single('thumb'), function (req, res, next) {
     //request(options);
     break;
   }
+
+	//value 1 - Account title?
+	//value 2 - Player title
+	//value 3 - Media title
 
   switch (payload.Metadata.librarySectionType) {
     case 'show':
