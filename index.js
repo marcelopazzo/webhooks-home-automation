@@ -1,56 +1,53 @@
+#!/usr/bin/env node
+
 var express = require('express')
   , request = require('request')
-  , key = require('./key.json')
+  , config  = require('./config.json')
   , multer  = require('multer');
 
 var app = express();
 var upload = multer({ dest: '/tmp/' });
 
-var key = '/with/key/' + key.key;
+var key = '/with/key/' + config.key;
+var username = config.username;
 var ifttt_url = 'https://maker.ifttt.com/trigger/';
 
 app.post('/', upload.single('thumb'), function (req, res) {
+  var now = new Date();
   var payload = JSON.parse(req.body.payload);
   console.log('Got webhook for', payload.event);
+
+
+  if (config[payload.Player.title] == undefined) {
+    console.log('No settings for this device');
+    return res.sendStatus(200);
+  }
+
+  var device_settings = config[payload.Player.title]
+
+  var events = device_settings.events;
+
+  var hour = now.getHours();
+  var start_hour = device_settings.start_hour;
+  var end_hour = device_settings.end_hour;
+
+  if (start_hour && start_hour > hour && end_hour && end_hour <= hour) {
+    console.log('Device should not be triggered at this time');
+    return res.sendStatus(200);
+  }
 
   var options = {
     method: 'PUT',
     json: true,
   };
 
-  //Ensure IFTTT's Maker channel is set to digest Plex.Play, Plex.Resume, ... events
-  //If you want to control lights in particular 'Plex Rooms' you can look into payload.Player.title to send a custom event based on the player (ensure you have a unique name for each player configured in Plex).
-  switch (payload.event) {
-  case 'media.play':  
-    // Trigger IFTTT_Plex.Play
-    console.log('IFTTT_Plex.Play');
-    options.url = ifttt_url + 'Plex.Play' + key;
-    //options.body = { value1: payload.Account.title, value2: payload.Metadata.title, value3: payload.Player.title };
-    //request(options);
-    break;
-  case 'media.resume':
-    // Trigger IFTTT_Plex.Resume
-    console.log('IFTTT_Plex.Resume');
-    options.url = ifttt_url + 'Plex.Resume' + key;
-    //request(options);
-    break;
-  case 'media.pause':
-    // Trigger IFTTT_Plex.Pause
-    console.log('IFTTT_Plex.Pause');
-    options.url = ifttt_url + 'Plex.Pause' + key;
-    //request(options);
-    break;
-  case 'media.stop':
-    // Trigger IFTTT_Plex.Stop
-    console.log('IFTTT_Plex.Stop');
-    options.url = ifttt_url + 'Plex.Stop' + key;
-    //request(options);
-    break;
+  if (events[payload.event]) {
+    console.log('IFTTT event: ', events[payload.event]);
+    options.url = ifttt_url + events[payload.event] + key;
+  } else {
+    console.log('Event not set up');
+    return res.sendStatus(200);
   }
-
-	//value 1 - Account title? = rtbrown560
-	//value 2 - Player title = chromecast
-	//value 3 - Media title
 
   switch (payload.Metadata.librarySectionType) {
     case 'show':
@@ -65,7 +62,8 @@ app.post('/', upload.single('thumb'), function (req, res) {
     default:
   }
 
-  if (payload.Account.title == 'rtbrown560' && payload.Player.title == 'Chromecast') {
+  // Only submitting the request for username in config file
+  if (payload.Account.title == username) {
     request(options);
   }
 

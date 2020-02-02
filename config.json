@@ -1,0 +1,12 @@
+{
+  "key": "<ifttt_maker_key>",
+  "username": "<username>",
+  "<device_name>": {
+    "events": {
+      "media.play" : "Plex.Play",
+      "media.resume" : "Plex.Resume",
+      "media.pause" : "Plex.Pause",
+      "media.stop" : "Plex.Stop"
+    }
+  }
+}
